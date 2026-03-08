@@ -1,0 +1,2 @@
+# PIT-Sim-A-High-Performance-Simulation-Engine-for-NIR-PIT-Kinetics
+A high-performance C++ simulation designed to model complex interactions between near-infrared (NIR) light, antibody-photosensitizer conjugates (APCs), and the resulting antitumor immune response, based on current photomedicine. This may translate into a robust software tool for researchers to predict treatment outcomes in various tumor models.
