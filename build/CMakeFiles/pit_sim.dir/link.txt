@@ -1,0 +1,1 @@
+/opt/homebrew/opt/llvm/bin/clang++  -arch arm64 -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/pit_sim.dir/src/main.cpp.o -o pit_sim  libpit_core.a /opt/homebrew/opt/llvm/lib/libomp.dylib -framework Accelerate
