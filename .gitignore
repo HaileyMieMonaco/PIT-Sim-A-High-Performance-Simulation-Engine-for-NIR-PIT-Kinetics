@@ -9,7 +9,6 @@ pit_sim
 
 # Generated data (re-created by running the sim + plot script)
 data/simulation_results.csv
-data/icd_plot.png
 
 # Python
 __pycache__/

@@ -1,37 +1,65 @@
 #include "biology/ICDKinetics.hpp"
+
 #include <cmath>
-#include <algorithm>
+#include <stdexcept>
+#include <string>
 
-// Constructor: Initializes the biological constants for ICD
-ICDKinetics::ICDKinetics(double initial_tumor_vol) 
-    : tumor_volume(initial_tumor_vol) {
-    // Rates based on preclinical observations of rapid necrosis
-    release_rate_ATP = 0.85;   // Rapid release upon membrane rupture
-    release_rate_HMGB1 = 0.45; // Slower nuclear protein release
+// -----------------------------------------------------------------------------
+// Constructor
+// -----------------------------------------------------------------------------
+ICDKinetics::ICDKinetics(double initial_tumor_vol, double effective_fluence)
+    : tumor_volume(initial_tumor_vol),
+      nir_fluence(effective_fluence)
+{
+    if (tumor_volume <= 0.0)
+        throw std::invalid_argument(
+            "ICDKinetics: tumor_volume must be > 0 (got " +
+            std::to_string(tumor_volume) + ")");
+
+    if (nir_fluence < 0.0)
+        throw std::invalid_argument(
+            "ICDKinetics: effective_fluence must be >= 0 (got " +
+            std::to_string(nir_fluence) + ")");
+
+    // Pre-compute the dose-dependent death fraction once (Beer-Lambert).
+    // Coefficient 0.1 (cm²/J) reflects the effective optical cross-section
+    // of the IR700-antibody conjugate at 690 nm (Monaco et al. 2022, §2.3).
+    death_fraction = 1.0 - std::exp(-nir_fluence * 0.1);
 }
 
-/**
- * Calculates the concentration of DAMPs following NIR irradiation.
- * Based on the physicochemical changes in the APC complex[cite: 175].
- */
-void ICDKinetics::calculate_damp_release(double nir_fluence, double time_hrs) {
-    // Stress response is dose-dependent on NIR light irradiation [cite: 211]
-    double death_fraction = 1.0 - std::exp(-nir_fluence * 0.1);
-    
-    // Release kinetics following a sigmoidal saturation curve
-    // ATP release occurs almost immediately after cell bursting [cite: 185]
-    current_atp = tumor_volume * death_fraction * (1.0 - std::exp(-release_rate_ATP * time_hrs));
-    
-    // HMGB1 release is a slightly more durable effect [cite: 15]
-    current_hmgb1 = tumor_volume * death_fraction * (1.0 - std::exp(-release_rate_HMGB1 * time_hrs));
+// -----------------------------------------------------------------------------
+// update()  — advance DAMP concentrations to time_hrs post-irradiation
+// -----------------------------------------------------------------------------
+void ICDKinetics::update(double time_hrs)
+{
+    if (time_hrs < 0.0)
+        throw std::invalid_argument(
+            "ICDKinetics::update: time_hrs must be >= 0 (got " +
+            std::to_string(time_hrs) + ")");
+
+    // First-order saturation kinetics: C(t) = V * D * (1 - exp(-k * t))
+    //   V = volume of necrotic tissue contributing DAMPs
+    //   D = death fraction (dose-dependent)
+    //   k = marker-specific release rate constant
+
+    // CRT is exposed on the outer membrane leaflet early in the ICD cascade.
+    current_crt   = tumor_volume * death_fraction * (1.0 - std::exp(-k_CRT   * time_hrs));
+
+    // ATP is released rapidly as cytoplasmic membranes rupture.
+    current_atp   = tumor_volume * death_fraction * (1.0 - std::exp(-k_ATP   * time_hrs));
+
+    // HMGB1 translocates from the nucleus after chromatin decondensation —
+    // a measurably slower process than cytoplasmic release.
+    current_hmgb1 = tumor_volume * death_fraction * (1.0 - std::exp(-k_HMGB1 * time_hrs));
 }
 
-/**
- * Models the probability of DC maturation based on DAMP concentration.
- * Mature DCs are the bridge to CD8+ T cell priming[cite: 186].
- */
-double ICDKinetics::get_dc_maturation_probability() const {
-    // Combine DAMP signals to determine the strength of the immune "alert"
-    double signal_strength = current_atp + current_hmgb1;
-    return signal_strength / (signal_strength + 10.0); // Hill equation for saturation
+// -----------------------------------------------------------------------------
+// get_dc_maturation_probability()
+// -----------------------------------------------------------------------------
+double ICDKinetics::get_dc_maturation_probability() const
+{
+    // Combined DAMP signal drives DC maturation via PRR engagement.
+    // Hill equation (n=1) models cooperative but saturable receptor binding.
+    double signal = current_crt + current_atp + current_hmgb1;
+    return signal / (signal + K_HALF);
 }
