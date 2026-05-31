@@ -1,7 +1,5 @@
 # PIT-Sim: NIR-PIT Kinetics Simulation Engine
 
-[![CI](https://github.com/haileymonaco/PIT-Sim-A-High-Performance-Simulation-Engine-for-NIR-PIT-Kinetics/actions/workflows/ci.yml/badge.svg)](https://github.com/haileymonaco/PIT-Sim-A-High-Performance-Simulation-Engine-for-NIR-PIT-Kinetics/actions)
-
 A high-performance C++17 simulation engine that models the full biophysical pipeline of **Near-Infrared Photoimmunotherapy (NIR-PIT)** — from photon delivery through tissue to the downstream immune response — based on my published review:
 
 > **Monaco, H. et al. (2022).** *Quickly evolving near-infrared photoimmunotherapy provides multifaceted approach to modern cancer treatment.* [`docs/`](docs/)
