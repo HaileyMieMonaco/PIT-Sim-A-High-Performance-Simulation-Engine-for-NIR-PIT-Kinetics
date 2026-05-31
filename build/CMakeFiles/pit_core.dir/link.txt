@@ -1,2 +1,0 @@
-/usr/bin/ar qc libpit_core.a CMakeFiles/pit_core.dir/src/core/LightTransport.cpp.o CMakeFiles/pit_core.dir/src/biology/ICDKinetics.cpp.o
-/usr/bin/ranlib libpit_core.a
